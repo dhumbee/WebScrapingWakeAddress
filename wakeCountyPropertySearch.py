@@ -53,34 +53,40 @@ def getResults(name_to_search):
     # if multiple pages of results try to loop through all pages
     # and collect account number of each result
     # run function call to getAccountDetails to pull information from detail page
-    try:
-        count_pages = browser.find_element_by_name("spg")
-        number_of_pages = []
-        for option in count_pages.find_elements_by_tag_name("option"):
-            number_of_pages.append(option.text)
+    #try:
+    count_pages = browser.find_element_by_name("spg")
+    number_of_pages = []
+    for option in count_pages.find_elements_by_tag_name("option"):
+        number_of_pages.append(option.text)
 
-        for page in number_of_pages:
-            select = Select(browser.find_element_by_name("spg"))
-            select.select_by_visible_text(page)
-            go_button = browser.find_element_by_xpath("//input[@value='GO']")
-            go_button.send_keys(Keys.RETURN)
-            soup = bs4.BeautifulSoup (browser.page_source, "html.parser")
-            for row in soup.findAll('table')[4].tbody.findAll('tr'):
-                cols = row.findAll('td')
-                if len(cols) > 9:
-                    account = cols[1].get_text()
+    for page in number_of_pages:
+        select = Select(browser.find_element_by_name("spg"))
+        select.select_by_visible_text(page)
+        go_button = browser.find_element_by_xpath("//input[@value='GO']")
+        go_button.send_keys(Keys.RETURN)
+        soup = bs4.BeautifulSoup (browser.page_source, "html.parser")
+        for row in soup.findAll('table')[4].tbody.findAll('tr'):
+            cols = row.findAll('td')
+            if len(cols) > 9:
+                account = cols[1].get_text()
+                if account != "Account":
+                    account_link = browser.find_element_by_link_text(account)
+                    account_link.click()
+
+                
+
+
 
     # if multiple pages not found-collect account number of each result
     # run function call to getAccountDetails to pull information from detail page
-    except NoSuchElementException:
-            soup = bs4.BeautifulSoup (browser.page_source, "html.parser")
-            for row in soup.findAll('table')[4].tbody.findAll('tr'):
-                cols = row.findAll('td')
-                if len(cols) > 9:
-                    account = cols[1].get_text()
-         
-    browser.close()
     
+    #except NoSuchElementException:
+        #soup = bs4.BeautifulSoup (browser.page_source, "html.parser")
+        #for row in soup.findAll('table')[4].tbody.findAll('tr'):
+            #cols = row.findAll('td')
+            #if len(cols) > 9:
+                #account = cols[1].get_text()
+                #print(account)
+         
+    #browser.close()
 main()
-
-
