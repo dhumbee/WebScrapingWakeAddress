@@ -59,23 +59,35 @@ def getResults(name_to_search):
     for option in count_pages.find_elements_by_tag_name("option"):
         number_of_pages.append(option.text)
 
+    # loop thru pages to get each page of account results
     for page in number_of_pages:
         select = Select(browser.find_element_by_name("spg"))
         select.select_by_visible_text(page)
         go_button = browser.find_element_by_xpath("//input[@value='GO']")
         go_button.send_keys(Keys.RETURN)
         soup = bs4.BeautifulSoup (browser.page_source, "html.parser")
+        
+        # loop through result set and locate account numbers for each property record
         for row in soup.findAll('table')[4].tbody.findAll('tr'):
+            outer =[]
             cols = row.findAll('td')
             if len(cols) > 9:
                 account = cols[1].get_text()
-                if account != "Account":
-                    account_link = browser.find_element_by_link_text(account)
-                    account_link.click()
+            if account != "Account":
+                account_link = browser.find_element_by_link_text(account) 
+                account_link.click()
+                soup_detail = bs4.BeautifulSoup(browser.page_source, "html.parser")
 
-                
-
-
+                # get text for database fields
+                #property owner field
+                inner = []
+                for el in soup_detail.findAll('table')[5].tbody.findAll('tr'):
+                    prop_el = el.find('td')
+                    text = prop_el.get_text().strip()
+                    inner.append(text)
+                browser.execute_script("window.history.go(-1)")
+                outer.append(inner)
+                print(outer)
 
     # if multiple pages not found-collect account number of each result
     # run function call to getAccountDetails to pull information from detail page
@@ -88,5 +100,5 @@ def getResults(name_to_search):
                 #account = cols[1].get_text()
                 #print(account)
          
-    #browser.close()
+    browser.close()
 main()
