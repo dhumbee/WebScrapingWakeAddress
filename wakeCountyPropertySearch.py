@@ -60,7 +60,10 @@ def getResults(name_to_search):
         number_of_pages.append(option.text)
 
     # loop thru pages to get each page of account results
-    outer = []
+    outer_owner_info = []
+    outer_admin_data = []
+    outer_trans_improv_data = []
+    outer_assessed_data = []
     for page in number_of_pages:
         select = Select(browser.find_element_by_name("spg"))
         select.select_by_visible_text(page)
@@ -80,22 +83,39 @@ def getResults(name_to_search):
                 soup_detail = bs4.BeautifulSoup(browser.page_source, "html.parser")
 
                 # get text for database fields
-                #property owner, mailing address, and location address
+                #owner data table information
                 #inner list holds all data information per account record
-                inner = []
-                inner.append(account)
+                inner_owner_info = []
+                inner_owner_info.append(account)
                 #loop thru 5th table tag to grab all td tags
                 for el in soup_detail.findAll('table')[4].tbody.findAll('tr'):
                     prop_el = el.find('td')
                     text = prop_el.get_text().strip()
                     #append account record data to inner list
-                    inner.append(text)
+                    inner_owner_info.append(text)
                 #append individual account records to outer list
                 #to create lists of lists
-                outer.append(inner)
+                outer_owner_info.append(inner_owner_info)
+                #go back to previous page
+                #browser.execute_script("window.history.go(-1)")            
+    #print(outer_owner_info)
+
+                #admin data table information
+                #inner list holds all data information per account record
+                inner_admin_data = []
+                inner_admin_data.append(account)
+                #loop thru 5th table tag to grab all td tags
+                for el in soup_detail.findAll('table')[9].tbody.findAll('tr'):
+                    prop_el = el.find('td')
+                    text = prop_el.get_text().strip()
+                    #append account record data to inner list
+                    inner_admin_data.append(text)
+                #append individual account records to outer list
+                #to create lists of lists
+                outer_admin_data.append(inner_admin_data)
                 #go back to previous page
                 browser.execute_script("window.history.go(-1)")            
-    print(outer)
+    print(outer_admin_data)
                
         
                
