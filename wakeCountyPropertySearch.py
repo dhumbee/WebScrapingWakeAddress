@@ -60,6 +60,7 @@ def getResults(name_to_search):
         number_of_pages.append(option.text)
 
     # loop thru pages to get each page of account results
+    outer = []
     for page in number_of_pages:
         select = Select(browser.find_element_by_name("spg"))
         select.select_by_visible_text(page)
@@ -68,8 +69,8 @@ def getResults(name_to_search):
         soup = bs4.BeautifulSoup (browser.page_source, "html.parser")
         
         # loop through result set and locate account numbers for each property record
-        for row in soup.findAll('table')[4].tbody.findAll('tr'):
-            outer =[]
+    
+        for row in soup.findAll('table')[4].tbody.findAll('tr'):            
             cols = row.findAll('td')
             if len(cols) > 9:
                 account = cols[1].get_text()
@@ -79,15 +80,26 @@ def getResults(name_to_search):
                 soup_detail = bs4.BeautifulSoup(browser.page_source, "html.parser")
 
                 # get text for database fields
-                #property owner field
+                #property owner, mailing address, and location address
+                #inner list holds all data information per account record
                 inner = []
-                for el in soup_detail.findAll('table')[5].tbody.findAll('tr'):
+                inner.append(account)
+                #loop thru 5th table tag to grab all td tags
+                for el in soup_detail.findAll('table')[4].tbody.findAll('tr'):
                     prop_el = el.find('td')
                     text = prop_el.get_text().strip()
+                    #append account record data to inner list
                     inner.append(text)
-                browser.execute_script("window.history.go(-1)")
+                #append individual account records to outer list
+                #to create lists of lists
                 outer.append(inner)
-                print(outer)
+                #go back to previous page
+                browser.execute_script("window.history.go(-1)")            
+    print(outer)
+               
+        
+               
+
 
     # if multiple pages not found-collect account number of each result
     # run function call to getAccountDetails to pull information from detail page
