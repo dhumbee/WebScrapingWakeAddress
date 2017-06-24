@@ -89,8 +89,8 @@ def getResults(name_to_search):
                 inner_owner_info.append(account)
                 #loop thru 5th table tag to grab all td tags
                 for el in soup_detail.findAll('table')[4].tbody.findAll('tr'):
-                    prop_el = el.find('td')
-                    text = prop_el.get_text().strip()
+                    prop_el1 = el.find('td')
+                    text = prop_el1.get_text().strip()
                     #append account record data to inner list
                     inner_owner_info.append(text)
                 #append individual account records to outer list
@@ -98,24 +98,57 @@ def getResults(name_to_search):
                 outer_owner_info.append(inner_owner_info)
                 #go back to previous page
                 #browser.execute_script("window.history.go(-1)")            
-    #print(outer_owner_info)
-
+    
                 #admin data table information
                 #inner list holds all data information per account record
                 inner_admin_data = []
                 inner_admin_data.append(account)
                 #loop thru 5th table tag to grab all td tags
                 for el in soup_detail.findAll('table')[9].tbody.findAll('tr'):
-                    prop_el = el.find('td')
-                    text = prop_el.get_text().strip()
-                    #append account record data to inner list
-                    inner_admin_data.append(text)
+                    # holds each pair of line items, field and value
+                    admin_items = []
+                    prop_el2 = el.findAll('td')
+                    try:
+                        admin_text1 = prop_el2[0].get_text().strip()
+                        admin_text2 = prop_el2[1].get_text().strip()
+                        admin_items.append(admin_text1)
+                        admin_items.append(admin_text2)
+                    except IndexError:
+                        admin_text1 = prop_el2[0].get_text().strip()
+                        admin_items.append(admin_text1)
+                    #append account record data/line items to inner list
+                    inner_admin_data.append(admin_items)
                 #append individual account records to outer list
-                #to create lists of lists
+                #to create lists of lists of lists
                 outer_admin_data.append(inner_admin_data)
                 #go back to previous page
+                #browser.execute_script("window.history.go(-1)")
+
+                #transfer and improvement data table information
+                #inner list holds all data information per account record
+                inner_trans_improv_data = []
+                inner_trans_improv_data.append(account)
+                #loop thru 5th table tag to grab all td tags
+                for el in soup_detail.findAll('table')[10].tbody.findAll('tr'):
+                    # holds each pair of line items, field and value
+                    trans_improv_items = []                    
+                    prop_el3 = el.findAll('td')
+                    try:                    
+                        trans_improv_text1 = prop_el3[0].get_text().strip()
+                        trans_improv_text2 = prop_el3[1].get_text().strip()
+                        trans_improv_items.append(trans_improv_text1)
+                        trans_improv_items.append(trans_improv_text2)
+                    except IndexError:
+                        trans_improv_text1 = prop_el3[0].get_text().strip()
+                        trans_improv_items.append(trans_improv_text1)
+                    #append account record data/line items to inner list
+                    inner_trans_improv_data.append(trans_improv_items)
+                #append individual account records to outer list
+                #to create lists of lists of lists
+                outer_trans_improv_data.append(inner_trans_improv_data)
+                #go back to previous page
                 browser.execute_script("window.history.go(-1)")            
-    print(outer_admin_data)
+    print(outer_owner_info, outer_admin_data, outer_trans_improv_data)
                
         
                
