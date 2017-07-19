@@ -21,7 +21,9 @@ def main():
 
     name_to_search = input("Enter a street name to search for: ")
     #name_to_search = 'Fire'
-    getResults(name_to_search)
+    account, soup_detail = getResults(name_to_search)
+    ret1, ret2 = getOwnerInfo(account, soup_detail)
+
 
 # get search results
 def getResults(name_to_search):
@@ -60,7 +62,6 @@ def getResults(name_to_search):
         number_of_pages.append(option.text)
 
     # loop thru pages to get each page of account results
-    outer_owner_info = []
     outer_admin_data = []
     outer_trans_improv_data = []
     outer_assessed_data = []
@@ -81,23 +82,48 @@ def getResults(name_to_search):
                 account_link = browser.find_element_by_link_text(account) 
                 account_link.click()
                 soup_detail = bs4.BeautifulSoup(browser.page_source, "html.parser")
+                return account, soup_detail
 
-                # get text for database fields
-                #owner data table information
-                #inner list holds all data information per account record
-                inner_owner_info = []
-                inner_owner_info.append(account)
-                #loop thru 5th table tag to grab all td tags
-                for el in soup_detail.findAll('table')[4].tbody.findAll('tr'):
-                    prop_el1 = el.find('td')
-                    text = prop_el1.get_text().strip()
-                    #append account record data to inner list
-                    inner_owner_info.append(text)
-                #append individual account records to outer list
-                #to create lists of lists
-                outer_owner_info.append(inner_owner_info)
-                #go back to previous page
-                #browser.execute_script("window.history.go(-1)")            
+# owner and property list
+def getOwnerInfo(account, soup_detail):
+    owner_info_list = []
+    property_info_list = []
+    # get text for database fields
+    #owner data table information
+    #inner list holds all data information per account record
+    owner_info = []
+    property_info = []
+    owner_info.append(account)
+    property_info.append(account)
+    #loop thru 5th table tag to grab all td tags
+    for el in soup_detail.findAll('table')[4].tbody.findAll('tr'):
+        prop_el = el.find('td')
+        # owner info
+        account_num = prop_el[0].get_text().strip()
+        owner1 = prop_el[3].get_text().strip()
+        owner2 = prop_el[4].get_text().strip()
+        mailing_address_name = prop_el[7].get_text().strip()
+        mailing_address_1 = prop_el[8].get_text().strip()
+        mailing_address_2 = prop_el[9].get_text().strip()
+        # append owner info to list
+        owner_info.append(account_num)
+        owner_info.append(owner1)
+        owner_info.append(owner2)
+        owner_info.append(mailing_address_name)
+        owner_info.append(mailing_address_1)
+        owner_info.append(mailing_address_2)
+        # property info
+        location_address_1 = prop_el[-3].get_text().strip()
+        location_address_2 = prop_el[-2].get_text().strip()
+        location_temp = prop_el[-1].get_text().strip()
+        # append property info to list
+        property_info.append(location_address_1)
+        property_info.append(location_address_2)
+        property_info.append(location_temp)
+    
+    owner_info_list.append(owner_info)
+    property_info_list.append(property_info)
+    return owner_info_list, property_info_list
     
                 #admin data table information
                 #inner list holds all data information per account record
@@ -121,9 +147,7 @@ def getResults(name_to_search):
                 #append individual account records to outer list
                 #to create lists of lists of lists
                 outer_admin_data.append(inner_admin_data)
-                #go back to previous page
-                #browser.execute_script("window.history.go(-1)")
-
+        
                 #transfer and improvement data table information
                 #inner list holds all data information per account record
                 inner_trans_improv_data = []
@@ -146,9 +170,32 @@ def getResults(name_to_search):
                 #append individual account records to outer list
                 #to create lists of lists of lists
                 outer_trans_improv_data.append(inner_trans_improv_data)
+
+                #assessed value data table information
+                #inner list holds all data information per account record
+                inner_assessed_data = []
+                inner_assessed_data.append(account)
+                #loop thru 5th table tag to grab all td tags
+                for el in soup_detail.findAll('table')[11].tbody.findAll('tr'):
+                    # holds each pair of line items, field and value
+                    assessed_items = []                    
+                    prop_el4 = el.findAll('td')
+                    try:                    
+                        assessed_text1 = prop_el4[0].get_text().strip()
+                        assessed_text2 = prop_el4[1].get_text().strip()
+                        assessed_items.append(assessed_text1)
+                        assessed_items.append(assessed_text2)
+                    except IndexError:
+                        assessed_text1 = prop_el4[0].get_text().strip()
+                        assessed_items.append(assessed_text1)
+                    #append account record data/line items to inner list
+                    inner_assessed_data.append(assessed_items)
+                #append individual account records to outer list
+                #to create lists of lists of lists
+                outer_assessed_data.append(inner_assessed_data)
                 #go back to previous page
                 browser.execute_script("window.history.go(-1)")            
-    print(outer_owner_info, outer_admin_data, outer_trans_improv_data)
+    print(outer_assessed_data)
                
         
                
