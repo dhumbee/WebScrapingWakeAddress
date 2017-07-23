@@ -21,7 +21,7 @@ def main():
 
     name_to_search = input("Enter a street name to search for: ")
     all_tables = getResults(name_to_search)
-    browser.close()  
+    
 
 # get search results
 def getResults(name_to_search):
@@ -60,16 +60,24 @@ def getResults(name_to_search):
     for option in count_pages.find_elements_by_tag_name("option"):
         number_of_pages.append(option.text)
 
+    # owner data table information
+    owner_info_list = []
+
+    # property data table information
+    property_info_list = []
+
+    # building data table information
+    building_info_list = []
+
     # loop thru pages to get each page of account results
     for page in number_of_pages:
         select = Select(browser.find_element_by_name("spg"))
         select.select_by_visible_text(page)
         go_button = browser.find_element_by_xpath("//input[@value='GO']")
         go_button.send_keys(Keys.RETURN)
-        soup = bs4.BeautifulSoup (browser.page_source, "html.parser")
-        
-        # loop through result set and locate account numbers for each property record
-    
+        soup = bs4.BeautifulSoup (browser.page_source, "html.parser")    
+
+        # loop through result set and locate account numbers for each property
         for row in soup.findAll('table')[4].tbody.findAll('tr'):            
             cols = row.findAll('td')
             if len(cols) > 9:
@@ -78,19 +86,29 @@ def getResults(name_to_search):
                 account_link = browser.find_element_by_link_text(account) 
                 account_link.click()
                 soup_detail = bs4.BeautifulSoup(browser.page_source, "html.parser")
+                try:
+                    owner_info = getOwnerInfo(account, soup_detail)
+                    # append each record's information to data table list above
+                    owner_info_list.append(owner_info)
 
-                owner_table = getOwnerInfo(account, soup_detail)
-                property_table = getPropertyData(account, soup_detail)
-                getBuildingData(browser, account, soup_detail)
+                    property_info = getPropertyData(account, soup_detail)
+                    # append each record's information to data table list above
+                    property_info_list.append(property_info)
 
-                #go back to previous page
-                browser.execute_script("window.history.go(-1)")  
-               
+                    building_info = getBuildingData(browser, account, soup_detail)
+                    # append each record's information to data table list above
+                    building_info_list.append(building_info) 
+                    print(owner_info_list, property_info_list, building_info_list) 
+                    #go back to previous page
+                    browser.execute_script("window.history.go(-2)")
+                except IndexError:
+                    browser.execute_script("window.history.go(-2)")
+                    continue
+    browser.close()  
+          
 
 # owner list
-def getOwnerInfo(account, soup_detail):
-    # owner data table information
-    owner_info_list = []
+def getOwnerInfo(account, soup_detail):    
         
     # owner_info contains each real estate id account
     owner_info = []
@@ -107,18 +125,13 @@ def getOwnerInfo(account, soup_detail):
         owner_info.append(owner)
     del owner_info[1:3]
     del owner_info[3:5]
-    del owner_info[-4: ]   
-
-    # append each record's information to data table list above
-    owner_info_list.append(owner_info)
+    del owner_info[-4: ]      
     
-    return owner_info_list
+    return owner_info
 
 # property list
 def getPropertyData(account, soup_detail):    
-    # property data table information
-    property_info_list = []
-
+    
     # property_info contains each real estate id account
     property_info = []
 
@@ -162,19 +175,13 @@ def getPropertyData(account, soup_detail):
     for el in soup_detail.findAll('table')[10].tbody.findAll('tr')[0:7]:                  
         prop_el = el.findAll('td')
         pair = pair_items(prop_el)
-         #append account record data/line items to property_info
+        #append account record data/line items to property_info
         property_info.append(pair)
-
-    # append each record's information to data table list above
-    property_info_list.append(property_info)
-    print(property_info)
-    return property_info_list   
+    
+    return property_info 
                 
 # building list               
 def getBuildingData(browser, account, soup_detail):
-
-    # building data table information
-    property_info_list = []
 
     # building_info contains each real estate id account
     building_info = []
@@ -191,7 +198,7 @@ def getBuildingData(browser, account, soup_detail):
         #append account record data/line items to property_info
         building_info.append(building_items)
 
-    building_link = browser.find_element_by_link_text('Building.asp')
+    building_link = browser.find_element_by_link_text('Buildings')
     building_link.click()
     soup_detail = bs4.BeautifulSoup(browser.page_source, "html.parser")
 
@@ -209,8 +216,11 @@ def getBuildingData(browser, account, soup_detail):
 
     #loop thru 11th table tag to grab td tags
     for el in soup_detail.findAll('table')[10].tbody.findAll('tr'):
-        prop_el = el.findAll('td')
-        print(prop_el)
+        prop_el = el.find('td')
+        building = prop_el.get_text().strip()
+        building_info.append(building)
+    
+    return building_info
 
 def pair_items(list_of_tags):
     items = []
