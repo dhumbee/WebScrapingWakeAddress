@@ -20,9 +20,8 @@ from selenium.common.exceptions import NoSuchElementException
 def main():
 
     name_to_search = input("Enter a street name to search for: ")
-    browser, account, soup_detail = getResults(name_to_search)
-    owner_table = getOwnerInfo(account, soup_detail)
-    property_table = getPropertyData(account, soup_detail)
+    all_tables = getResults(name_to_search)
+    browser.close()  
 
 # get search results
 def getResults(name_to_search):
@@ -57,6 +56,7 @@ def getResults(name_to_search):
     #try:
     count_pages = browser.find_element_by_name("spg")
     number_of_pages = []
+
     for option in count_pages.find_elements_by_tag_name("option"):
         number_of_pages.append(option.text)
 
@@ -78,7 +78,14 @@ def getResults(name_to_search):
                 account_link = browser.find_element_by_link_text(account) 
                 account_link.click()
                 soup_detail = bs4.BeautifulSoup(browser.page_source, "html.parser")
-                return browser, account, soup_detail
+
+                owner_table = getOwnerInfo(account, soup_detail)
+                property_table = getPropertyData(account, soup_detail)
+                getBuildingData(browser, account, soup_detail)
+
+                #go back to previous page
+                browser.execute_script("window.history.go(-1)")  
+               
 
 # owner list
 def getOwnerInfo(account, soup_detail):
@@ -93,24 +100,18 @@ def getOwnerInfo(account, soup_detail):
    
     #loop thru 5th table tag to grab all td tags
     for el in soup_detail.findAll('table')[4].tbody.findAll('tr'):
-        prop_el = el.findAll('td')
-        # owner info
-        account_num = prop_el[0].get_text().strip()
-        owner1 = prop_el[3].get_text().strip()
-        owner2 = prop_el[4].get_text().strip()
-        mailing_address_name = prop_el[7].get_text().strip()
-        mailing_address_1 = prop_el[8].get_text().strip()
-        mailing_address_2 = prop_el[9].get_text().strip()
-        # append owner info to owner_info list
-        owner_info.append(account_num)
-        owner_info.append(owner1)
-        owner_info.append(owner2)
-        owner_info.append(mailing_address_name)
-        owner_info.append(mailing_address_1)
-        owner_info.append(mailing_address_2)
+        prop_el = el.find('td')
         
+        # owner info
+        owner = prop_el.get_text().strip()
+        owner_info.append(owner)
+    del owner_info[1:3]
+    del owner_info[3:5]
+    del owner_info[-4: ]   
+
     # append each record's information to data table list above
     owner_info_list.append(owner_info)
+    
     return owner_info_list
 
 # property list
@@ -126,16 +127,14 @@ def getPropertyData(account, soup_detail):
     
     #loop thru 5th table tag to grab all td tags
     for el in soup_detail.findAll('table')[4].tbody.findAll('tr'):
-        prop_el = el.findAll('td')
+        prop_el = el.find('td')
+        
         # property info
-        location_address_1 = prop_el[-3].get_text().strip()
-        location_address_2 = prop_el[-2].get_text().strip()
-        location_temp = prop_el[-1].get_text().strip()
-        # append property info to property_info list
-        property_info.append(location_address_1)
-        property_info.append(location_address_2)
-        property_info.append(location_temp)    
-    
+        prop = prop_el.get_text().strip()
+        property_info.append(prop)
+
+    del property_info[1:11]   
+
     #loop thru 10th table tag to grab all td tags
     for el in soup_detail.findAll('table')[9].tbody.findAll('tr'):
         # holds each pair of line items, field and value
@@ -160,25 +159,15 @@ def getPropertyData(account, soup_detail):
         property_info.append(property_items)
 
     #loop thru 11th table tag to grab first 8 tr tags and all td tags inside
-    for el in soup_detail.findAll('table')[10].tbody.findAll('tr')[0:8]:
-        # holds each pair of line items, field and value
-        property_items2 = []                    
+    for el in soup_detail.findAll('table')[10].tbody.findAll('tr')[0:7]:                  
         prop_el = el.findAll('td')
-        try:                    
-            prop_text1 = prop_el[0].get_text().strip()
-            prop_text2 = prop_el[1].get_text().strip()
-            property_items2.append(prop_text1)
-            property_items2.append(prop_text2)
-        except IndexError:
-            prop_text1 = prop_el[0].get_text().strip()
-            property_items2.append(prop_text1)
-
+        pair = pair_items(prop_el)
          #append account record data/line items to property_info
-        property_info.append(property_items2)
+        property_info.append(pair)
 
     # append each record's information to data table list above
     property_info_list.append(property_info)
-    
+    print(property_info)
     return property_info_list   
                 
 # building list               
@@ -194,27 +183,48 @@ def getBuildingData(browser, account, soup_detail):
     building_info.append(account)
 
     #loop thru 11th table tag to grab last 4 tr tags and all td tags inside
-    for el in soup_detail.findAll('table')[10].tbody.findAll('tr')[13:]:
-        # holds each pair of line items, field and value
-        building_items = []                    
+    for el in soup_detail.findAll('table')[10].tbody.findAll('tr')[14:-2]:            
         prop_el = el.findAll('td')
-        try:                    
-            build_text1 = prop_el[0].get_text().strip()
-            build_text2 = prop_el[1].get_text().strip()
-            building_items.append(prop_text1)
-            building_items.append(prop_text2)
-        except IndexError:
-            build_text1 = prop_el[0].get_text().strip()
-            building_items.append(build_text1)
+        pair = pair_items(prop_el)
+        building_info.append(pair)
 
         #append account record data/line items to property_info
         building_info.append(building_items)
 
     building_link = browser.find_element_by_link_text('Building.asp')
     building_link.click()
-    
+    soup_detail = bs4.BeautifulSoup(browser.page_source, "html.parser")
 
+    #loop thru 10th table tag to grab td tags
+    for el in soup_detail.findAll('table')[9].tbody.findAll('tr'):
+        prop_el = el.findAll('td')
+        pair = pair_items(prop_el)
+        building_info.append(pair)
 
+    #loop thru 13th table tag to grab td tags
+    for el in soup_detail.findAll('table')[12].tbody.findAll('tr'):
+        prop_el = el.findAll('td')
+        pair = pair_items(prop_el)
+        building_info.append(pair)
+
+    #loop thru 11th table tag to grab td tags
+    for el in soup_detail.findAll('table')[10].tbody.findAll('tr'):
+        prop_el = el.findAll('td')
+        print(prop_el)
+
+def pair_items(list_of_tags):
+    items = []
+    try:                    
+        field = list_of_tags[0].get_text().strip()
+        value = list_of_tags[1].get_text().strip()
+        items.append(field)
+        items.append(value)
+    except IndexError:
+        item = list_of_tags[0].get_text().strip()
+        items.append(item)
+    return items
+
+main()
 
 '''#append account record data/line items to inner list
     inner_trans_improv_data.append(trans_improv_items)  
@@ -244,24 +254,16 @@ for el in soup_detail.findAll('table')[11].tbody.findAll('tr'):
 #append individual account records to outer list
 #to create lists of lists of lists
 outer_assessed_data.append(inner_assessed_data)
-#go back to previous page
-browser.execute_script("window.history.go(-1)")            
-    print(outer_assessed_data)'''
-               
+          
+    print(outer_assessed_data)            
         
-               
-
-
-    # if multiple pages not found-collect account number of each result
-    # run function call to getAccountDetails to pull information from detail page
+    if multiple pages not found-collect account number of each result
+    run function call to getAccountDetails to pull information from detail page
     
-    #except NoSuchElementException:
-        #soup = bs4.BeautifulSoup (browser.page_source, "html.parser")
-        #for row in soup.findAll('table')[4].tbody.findAll('tr'):
-            #cols = row.findAll('td')
-            #if len(cols) > 9:
-                #account = cols[1].get_text()
-                #print(account)
-         
-    browser.close()
-main()
+    except NoSuchElementException:
+        soup = bs4.BeautifulSoup (browser.page_source, "html.parser")
+        for row in soup.findAll('table')[4].tbody.findAll('tr'):
+            cols = row.findAll('td')
+            if len(cols) > 9:
+                account = cols[1].get_text()
+                print(account)'''

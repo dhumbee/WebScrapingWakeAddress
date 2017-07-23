@@ -2,12 +2,12 @@
 
 class Property:
 
-	def __init__(self, real_estate_id, prop_desc, location_address, 
-		location_address_2, old_map, map_scale, vcs, prop_city, fire_dist, 
-		township, etj, spec_dist, zoning, hist_id_1, hist_id_2, permit_date, 
-		permit_num, deed_date, book_page, rev_stamps, pkg_sale_date, pkg_sale_price):
+	def __init__(self, real_estate_id, location_address, 
+		location_address_2, old_map, map_scale, vcs, prop_city, 
+		fire_dist, township, etj, spec_dist, zoning, hist_id_1, 
+		hist_id_2, permit_date, permit_num, deed_date, book_page, 
+		rev_stamps, pkg_sale_date, pkg_sale_price):
 		self.__real_estate_id = real_estate_id
-		self.__prop_desc = prop_desc
 		self.__location_address = location_address
 		self.__location_address_2 = location_address_2
 		self.__old_map = old_map
