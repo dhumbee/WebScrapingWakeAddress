@@ -20,10 +20,9 @@ from selenium.common.exceptions import NoSuchElementException
 def main():
 
     name_to_search = input("Enter a street name to search for: ")
-    #name_to_search = 'Fire'
-    account, soup_detail = getResults(name_to_search)
-    ret1, ret2 = getOwnerInfo(account, soup_detail)
-
+    browser, account, soup_detail = getResults(name_to_search)
+    owner_table = getOwnerInfo(account, soup_detail)
+    property_table = getPropertyData(account, soup_detail)
 
 # get search results
 def getResults(name_to_search):
@@ -62,9 +61,6 @@ def getResults(name_to_search):
         number_of_pages.append(option.text)
 
     # loop thru pages to get each page of account results
-    outer_admin_data = []
-    outer_trans_improv_data = []
-    outer_assessed_data = []
     for page in number_of_pages:
         select = Select(browser.find_element_by_name("spg"))
         select.select_by_visible_text(page)
@@ -82,22 +78,22 @@ def getResults(name_to_search):
                 account_link = browser.find_element_by_link_text(account) 
                 account_link.click()
                 soup_detail = bs4.BeautifulSoup(browser.page_source, "html.parser")
-                return account, soup_detail
+                return browser, account, soup_detail
 
-# owner and property list
+# owner list
 def getOwnerInfo(account, soup_detail):
+    # owner data table information
     owner_info_list = []
-    property_info_list = []
-    # get text for database fields
-    #owner data table information
-    #inner list holds all data information per account record
+        
+    # owner_info contains each real estate id account
     owner_info = []
-    property_info = []
+    
+    # append real estate id as first item in each account record 
     owner_info.append(account)
-    property_info.append(account)
+   
     #loop thru 5th table tag to grab all td tags
     for el in soup_detail.findAll('table')[4].tbody.findAll('tr'):
-        prop_el = el.find('td')
+        prop_el = el.findAll('td')
         # owner info
         account_num = prop_el[0].get_text().strip()
         owner1 = prop_el[3].get_text().strip()
@@ -105,97 +101,152 @@ def getOwnerInfo(account, soup_detail):
         mailing_address_name = prop_el[7].get_text().strip()
         mailing_address_1 = prop_el[8].get_text().strip()
         mailing_address_2 = prop_el[9].get_text().strip()
-        # append owner info to list
+        # append owner info to owner_info list
         owner_info.append(account_num)
         owner_info.append(owner1)
         owner_info.append(owner2)
         owner_info.append(mailing_address_name)
         owner_info.append(mailing_address_1)
         owner_info.append(mailing_address_2)
+        
+    # append each record's information to data table list above
+    owner_info_list.append(owner_info)
+    return owner_info_list
+
+# property list
+def getPropertyData(account, soup_detail):    
+    # property data table information
+    property_info_list = []
+
+    # property_info contains each real estate id account
+    property_info = []
+
+    # append real estate id as first item in each account record
+    property_info.append(account)
+    
+    #loop thru 5th table tag to grab all td tags
+    for el in soup_detail.findAll('table')[4].tbody.findAll('tr'):
+        prop_el = el.findAll('td')
         # property info
         location_address_1 = prop_el[-3].get_text().strip()
         location_address_2 = prop_el[-2].get_text().strip()
         location_temp = prop_el[-1].get_text().strip()
-        # append property info to list
+        # append property info to property_info list
         property_info.append(location_address_1)
         property_info.append(location_address_2)
-        property_info.append(location_temp)
+        property_info.append(location_temp)    
     
-    owner_info_list.append(owner_info)
-    property_info_list.append(property_info)
-    return owner_info_list, property_info_list
-    
-                #admin data table information
-                #inner list holds all data information per account record
-                inner_admin_data = []
-                inner_admin_data.append(account)
-                #loop thru 5th table tag to grab all td tags
-                for el in soup_detail.findAll('table')[9].tbody.findAll('tr'):
-                    # holds each pair of line items, field and value
-                    admin_items = []
-                    prop_el2 = el.findAll('td')
-                    try:
-                        admin_text1 = prop_el2[0].get_text().strip()
-                        admin_text2 = prop_el2[1].get_text().strip()
-                        admin_items.append(admin_text1)
-                        admin_items.append(admin_text2)
-                    except IndexError:
-                        admin_text1 = prop_el2[0].get_text().strip()
-                        admin_items.append(admin_text1)
-                    #append account record data/line items to inner list
-                    inner_admin_data.append(admin_items)
-                #append individual account records to outer list
-                #to create lists of lists of lists
-                outer_admin_data.append(inner_admin_data)
-        
-                #transfer and improvement data table information
-                #inner list holds all data information per account record
-                inner_trans_improv_data = []
-                inner_trans_improv_data.append(account)
-                #loop thru 5th table tag to grab all td tags
-                for el in soup_detail.findAll('table')[10].tbody.findAll('tr'):
-                    # holds each pair of line items, field and value
-                    trans_improv_items = []                    
-                    prop_el3 = el.findAll('td')
-                    try:                    
-                        trans_improv_text1 = prop_el3[0].get_text().strip()
-                        trans_improv_text2 = prop_el3[1].get_text().strip()
-                        trans_improv_items.append(trans_improv_text1)
-                        trans_improv_items.append(trans_improv_text2)
-                    except IndexError:
-                        trans_improv_text1 = prop_el3[0].get_text().strip()
-                        trans_improv_items.append(trans_improv_text1)
-                    #append account record data/line items to inner list
-                    inner_trans_improv_data.append(trans_improv_items)
-                #append individual account records to outer list
-                #to create lists of lists of lists
-                outer_trans_improv_data.append(inner_trans_improv_data)
+    #loop thru 10th table tag to grab all td tags
+    for el in soup_detail.findAll('table')[9].tbody.findAll('tr'):
+        # holds each pair of line items, field and value
+        property_items = []
+        prop_el = el.findAll('td')
+        try:
+            prop_text1 = prop_el[0].get_text().strip()
+            prop_text2 = prop_el[1].get_text().strip()
+            # skip Land Class and Acreage- they go in other groups
+            if prop_text1 == 'Land Class' or prop_text1 == 'Acreage':
+                continue
+            property_items.append(prop_text1)
+            property_items.append(prop_text2)
+        except IndexError:
+            prop_text1 = prop_el2[0].get_text().strip()
+            # skip Land Class and Acreage- they go in other groups
+            if prop_text1 == 'Land Class' or prop_text1 == 'Acreage':
+                continue
+            property_items.append(prop_text1)
 
-                #assessed value data table information
-                #inner list holds all data information per account record
-                inner_assessed_data = []
-                inner_assessed_data.append(account)
-                #loop thru 5th table tag to grab all td tags
-                for el in soup_detail.findAll('table')[11].tbody.findAll('tr'):
-                    # holds each pair of line items, field and value
-                    assessed_items = []                    
-                    prop_el4 = el.findAll('td')
-                    try:                    
-                        assessed_text1 = prop_el4[0].get_text().strip()
-                        assessed_text2 = prop_el4[1].get_text().strip()
-                        assessed_items.append(assessed_text1)
-                        assessed_items.append(assessed_text2)
-                    except IndexError:
-                        assessed_text1 = prop_el4[0].get_text().strip()
-                        assessed_items.append(assessed_text1)
-                    #append account record data/line items to inner list
-                    inner_assessed_data.append(assessed_items)
-                #append individual account records to outer list
-                #to create lists of lists of lists
-                outer_assessed_data.append(inner_assessed_data)
-                #go back to previous page
-                browser.execute_script("window.history.go(-1)")            
-    print(outer_assessed_data)
+        #append account record data/line items to property_info
+        property_info.append(property_items)
+
+    #loop thru 11th table tag to grab first 8 tr tags and all td tags inside
+    for el in soup_detail.findAll('table')[10].tbody.findAll('tr')[0:8]:
+        # holds each pair of line items, field and value
+        property_items2 = []                    
+        prop_el = el.findAll('td')
+        try:                    
+            prop_text1 = prop_el[0].get_text().strip()
+            prop_text2 = prop_el[1].get_text().strip()
+            property_items2.append(prop_text1)
+            property_items2.append(prop_text2)
+        except IndexError:
+            prop_text1 = prop_el[0].get_text().strip()
+            property_items2.append(prop_text1)
+
+         #append account record data/line items to property_info
+        property_info.append(property_items2)
+
+    # append each record's information to data table list above
+    property_info_list.append(property_info)
+    
+    return property_info_list   
+                
+# building list               
+def getBuildingData(browser, account, soup_detail):
+
+    # building data table information
+    property_info_list = []
+
+    # building_info contains each real estate id account
+    building_info = []
+
+    # append real estate id as first item in each account record
+    building_info.append(account)
+
+    #loop thru 11th table tag to grab last 4 tr tags and all td tags inside
+    for el in soup_detail.findAll('table')[10].tbody.findAll('tr')[13:]:
+        # holds each pair of line items, field and value
+        building_items = []                    
+        prop_el = el.findAll('td')
+        try:                    
+            build_text1 = prop_el[0].get_text().strip()
+            build_text2 = prop_el[1].get_text().strip()
+            building_items.append(prop_text1)
+            building_items.append(prop_text2)
+        except IndexError:
+            build_text1 = prop_el[0].get_text().strip()
+            building_items.append(build_text1)
+
+        #append account record data/line items to property_info
+        building_info.append(building_items)
+
+    building_link = browser.find_element_by_link_text('Building.asp')
+    building_link.click()
+    
+
+
+
+'''#append account record data/line items to inner list
+    inner_trans_improv_data.append(trans_improv_items)  
+#append individual account records to outer list
+#to create lists of lists of lists
+outer_trans_improv_data.append(inner_trans_improv_data)
+
+#assessed value data table information
+#inner list holds all data information per account record
+inner_assessed_data = []
+inner_assessed_data.append(account)
+#loop thru 5th table tag to grab all td tags
+for el in soup_detail.findAll('table')[11].tbody.findAll('tr'):
+    # holds each pair of line items, field and value
+    assessed_items = []                    
+    prop_el4 = el.findAll('td')
+    try:                    
+        assessed_text1 = prop_el4[0].get_text().strip()
+        assessed_text2 = prop_el4[1].get_text().strip()
+        assessed_items.append(assessed_text1)
+        assessed_items.append(assessed_text2)
+    except IndexError:
+        assessed_text1 = prop_el4[0].get_text().strip()
+        assessed_items.append(assessed_text1)
+    #append account record data/line items to inner list
+    inner_assessed_data.append(assessed_items)
+#append individual account records to outer list
+#to create lists of lists of lists
+outer_assessed_data.append(inner_assessed_data)
+#go back to previous page
+browser.execute_script("window.history.go(-1)")            
+    print(outer_assessed_data)'''
                
         
                
