@@ -6,7 +6,8 @@ class Property:
 		location_address_2, old_map, map_scale, vcs, prop_city, 
 		fire_dist, township, etj, spec_dist, zoning, hist_id_1, 
 		hist_id_2, permit_date, permit_num, deed_date, book_page, 
-		rev_stamps, pkg_sale_date, pkg_sale_price):
+		rev_stamps, pkg_sale_date, pkg_sale_price, land_sale_date,
+		and_sale_price):
 		self.__real_estate_id = real_estate_id
 		self.__location_address = location_address
 		self.__location_address_2 = location_address_2
@@ -28,5 +29,7 @@ class Property:
 		self.__rev_stamps = rev_stamps
 		self.__pkg_sale_date = pkg_sale_date
 		self.__pkg_sale_price = pkg_sale_price
+		self.__land_sale_date = land_sale_date
+		self.__land_sale_price = land_sale_price
 		# building object info
 		# land object info

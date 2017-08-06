@@ -66,8 +66,17 @@ def getResults(name_to_search):
     # property data table information
     property_info_list = []
 
+    # tax info data table information
+    tax_info_list =[]
+
     # building data table information
     building_info_list = []
+
+    # land data table information
+    land_info_list = []
+
+    # taxbill data table information
+    taxbill_info_list = []
 
     # loop thru pages to get each page of account results
     for page in number_of_pages:
@@ -86,24 +95,35 @@ def getResults(name_to_search):
                 account_link = browser.find_element_by_link_text(account) 
                 account_link.click()
                 soup_detail = bs4.BeautifulSoup(browser.page_source, "html.parser")
-                try:
-                    owner_info = getOwnerInfo(account, soup_detail)
-                    # append each record's information to data table list above
-                    owner_info_list.append(owner_info)
+                
+                owner_info = getOwnerInfo(account, soup_detail)
+                # append each record's information to data table list above
+                owner_info_list.append(owner_info)
 
-                    property_info = getPropertyData(account, soup_detail)
-                    # append each record's information to data table list above
-                    property_info_list.append(property_info)
+                property_info = getPropertyData(account, soup_detail)
+                # append each record's information to data table list above
+                property_info_list.append(property_info)
 
-                    building_info = getBuildingData(browser, account, soup_detail)
-                    # append each record's information to data table list above
-                    building_info_list.append(building_info) 
-                    print(owner_info_list, property_info_list, building_info_list) 
-                    #go back to previous page
-                    browser.execute_script("window.history.go(-2)")
-                except IndexError:
-                    browser.execute_script("window.history.go(-2)")
-                    continue
+                tax_info = getTaxData(account, soup_detail)
+                # append each record's information to data table list above
+                tax_info_list.append(tax_info)
+
+                building_info = getBuildingData(browser, account, soup_detail)
+                # append each record's information to data table list above
+                building_info_list.append(building_info)
+
+                land_info = getLandData(browser, account)
+                # append each record's information to data table list above
+                land_info_list.append(land_info)
+
+                taxbill_info = getTaxBillData(browser, account)
+                # append each record's information to data table list above
+                taxbill_info_list.append(taxbill_info)
+
+                print(taxbill_info)
+                #go back to previous page
+                browser.execute_script("window.history.go(-2)")
+        
     browser.close()  
           
 
@@ -172,7 +192,7 @@ def getPropertyData(account, soup_detail):
         property_info.append(property_items)
 
     #loop thru 11th table tag to grab first 8 tr tags and all td tags inside
-    for el in soup_detail.findAll('table')[10].tbody.findAll('tr')[0:7]:                  
+    for el in soup_detail.findAll('table')[10].tbody.findAll('tr')[0:9]:                  
         prop_el = el.findAll('td')
         pair = pair_items(prop_el)
         #append account record data/line items to property_info
@@ -180,6 +200,23 @@ def getPropertyData(account, soup_detail):
     
     return property_info 
                 
+# tax info list
+def getTaxData(account, soup_detail):
+
+    # property_info contains each real estate id account
+    tax_info = []
+
+    # append real estate id as first item in each account record
+    tax_info.append(account)
+
+    for el in soup_detail.findAll('table')[11].tbody.findAll('tr'):                  
+        prop_el = el.findAll('td')
+        pair = pair_items(prop_el)
+        #append account record data/line items to property_info
+        tax_info.append(pair)
+
+    return tax_info
+
 # building list               
 def getBuildingData(browser, account, soup_detail):
 
@@ -189,38 +226,102 @@ def getBuildingData(browser, account, soup_detail):
     # append real estate id as first item in each account record
     building_info.append(account)
 
-    #loop thru 11th table tag to grab last 4 tr tags and all td tags inside
-    for el in soup_detail.findAll('table')[10].tbody.findAll('tr')[14:-2]:            
-        prop_el = el.findAll('td')
-        pair = pair_items(prop_el)
-        building_info.append(pair)
+    
+    try:
+        #loop thru 11th table tag to grab last 4 tr tags and all td tags inside
+        for el in soup_detail.findAll('table')[10].tbody.findAll('tr')[13:15]:            
+            prop_el = el.findAll('td')
+            pair = pair_items(prop_el)
+            building_info.append(pair) 
 
-        #append account record data/line items to property_info
-        building_info.append(building_items)
+        building_link = browser.find_element_by_link_text('Buildings')
+        building_link.click()
+        soup_detail = bs4.BeautifulSoup(browser.page_source, "html.parser")
 
-    building_link = browser.find_element_by_link_text('Buildings')
-    building_link.click()
-    soup_detail = bs4.BeautifulSoup(browser.page_source, "html.parser")
+        #loop thru 10th table tag to grab td tags
+        for el in soup_detail.findAll('table')[9].tbody.findAll('tr'):
+            prop_el = el.findAll('td')
+            pair = pair_items(prop_el)
+            building_info.append(pair)
 
-    #loop thru 10th table tag to grab td tags
-    for el in soup_detail.findAll('table')[9].tbody.findAll('tr'):
-        prop_el = el.findAll('td')
-        pair = pair_items(prop_el)
-        building_info.append(pair)
+        #loop thru 13th table tag to grab td tags
+        for el in soup_detail.findAll('table')[12].tbody.findAll('tr')[0:9]:
+            prop_el = el.findAll('td')
+            pair = pair_items(prop_el)
+            building_info.append(pair)
 
-    #loop thru 13th table tag to grab td tags
-    for el in soup_detail.findAll('table')[12].tbody.findAll('tr'):
-        prop_el = el.findAll('td')
-        pair = pair_items(prop_el)
-        building_info.append(pair)
+        #loop thru 11th table tag to grab td tags
+        for el in soup_detail.findAll('table')[10].tbody.findAll('tr'):
+            prop_el = el.findAll('td')
+            pair = pair_items(prop_el)
+            building_info.append(pair)
 
-    #loop thru 11th table tag to grab td tags
-    for el in soup_detail.findAll('table')[10].tbody.findAll('tr'):
-        prop_el = el.find('td')
-        building = prop_el.get_text().strip()
-        building_info.append(building)
+    except IndexError:
+        browser.execute_script("window.history.go(-1)")
+        pass
     
     return building_info
+
+# land list
+def getLandData(browser, account):
+    # land_info contains each real estate id account
+    land_info = []
+
+    # append real estate id as first item in each account record
+    land_info.append(account)
+
+    try:
+        land_link = browser.find_element_by_link_text('Land')
+        land_link.click()
+        soup_detail = bs4.BeautifulSoup(browser.page_source, "html.parser")
+
+        #loop thru 5th table tag to grab td tags
+        for el in soup_detail.findAll('table')[4].tbody.findAll('tr'):
+            prop_el = el.findAll('td')
+            pair = pair_items(prop_el)
+            land_info.append(pair)
+
+    except IndexError:
+        browser.execute_script("window.history.go(-1)")
+        pass
+
+    return land_info
+
+# tax bill list
+def getTaxBillData(browser, account):
+
+    # taxbill_info contains each real estate id account
+    taxbill_info = []
+
+    # append real estate id as first item in each account record
+    taxbill_info.append(account)
+    
+    taxbill_link = browser.find_element_by_link_text('Tax Bill')
+    taxbill_link.click()
+    soup_detail = bs4.BeautifulSoup(browser.page_source, "html.parser")
+
+    try:
+        if browser.find_element_by_name('Form1'):
+            browser.execute_script("window.history.go(-2)")
+
+    except NoSuchElementException:
+        # expand all tax bill results to one page, if only one page then pass
+        try:
+            full_page_link = browser.find_element_by_link_text('No Paging')
+            full_page_link.click()
+            for el in soup_detail.findAll('table')[6].tbody.findAll('tr')[2:]:
+                prop_el = el.findAll('td')[2:]
+                pair = pair_items(prop_el)
+                taxbill_info.append(pair)
+
+        except NoSuchElementException:
+            for el in soup_detail.findAll('table')[6].tbody.findAll('tr')[2:]:
+                prop_el = el.findAll('td')[2:]
+                pair = pair_items(prop_el)
+                taxbill_info.append(pair)    
+
+        return taxbill_info
+
 
 def pair_items(list_of_tags):
     items = []
