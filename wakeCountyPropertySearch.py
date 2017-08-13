@@ -119,11 +119,8 @@ def getResults(name_to_search):
                 taxbill_info = getTaxBillData(browser, account)
                 # append each record's information to data table list above
                 taxbill_info_list.append(taxbill_info)
-
+                                
                 print(taxbill_info)
-                #go back to previous page
-                browser.execute_script("window.history.go(-2)")
-        
     browser.close()  
           
 
@@ -258,7 +255,7 @@ def getBuildingData(browser, account, soup_detail):
 
     except IndexError:
         browser.execute_script("window.history.go(-1)")
-        pass
+        
     
     return building_info
 
@@ -296,29 +293,40 @@ def getTaxBillData(browser, account):
     # append real estate id as first item in each account record
     taxbill_info.append(account)
     
+    # go to tax bill link
     taxbill_link = browser.find_element_by_link_text('Tax Bill')
     taxbill_link.click()
     soup_detail = bs4.BeautifulSoup(browser.page_source, "html.parser")
 
+    # if no tax bill information is available go back to account list page
     try:
         if browser.find_element_by_name('Form1'):
-            browser.execute_script("window.history.go(-2)")
+            browser.execute_script("window.history.go(-4)")
 
+    # if tax bill information is available 'Form1' will not be found
+    # then data collection for tax bill information
     except NoSuchElementException:
-        # expand all tax bill results to one page, if only one page then pass
+        # expand all tax bill results to one page if multiple pages
         try:
             full_page_link = browser.find_element_by_link_text('No Paging')
             full_page_link.click()
             for el in soup_detail.findAll('table')[6].tbody.findAll('tr')[2:]:
-                prop_el = el.findAll('td')[2:]
+                prop_el = el.findAll('td')
                 pair = pair_items(prop_el)
                 taxbill_info.append(pair)
 
+            #go back to previous page
+            browser.execute_script("window.history.go(-5)")
+
+        # if only one page of tax bill results
         except NoSuchElementException:
             for el in soup_detail.findAll('table')[6].tbody.findAll('tr')[2:]:
-                prop_el = el.findAll('td')[2:]
+                prop_el = el.findAll('td')
                 pair = pair_items(prop_el)
-                taxbill_info.append(pair)    
+                taxbill_info.append(pair)
+
+            #go back to previous page
+            browser.execute_script("window.history.go(-4)")
 
         return taxbill_info
 
