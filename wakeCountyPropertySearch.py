@@ -53,7 +53,6 @@ def getResults(name_to_search):
     # if multiple pages of results try to loop through all pages
     # and collect account number of each result
     # run function call to getAccountDetails to pull information from detail page
-    #try:
     count_pages = browser.find_element_by_name("spg")
     number_of_pages = []
 
@@ -254,7 +253,10 @@ def getBuildingData(browser, account, soup_detail):
             building_info.append(pair)
 
     except IndexError:
-        browser.execute_script("window.history.go(-1)")
+        pass
+
+    # go back to account summary page
+    browser.execute_script("window.history.go(-1)")
         
     
     return building_info
@@ -279,10 +281,39 @@ def getLandData(browser, account):
             land_info.append(pair)
 
     except IndexError:
-        browser.execute_script("window.history.go(-1)")
         pass
 
+    # go back to account summary page
+    browser.execute_script("window.history.go(-1)")
+
     return land_info
+
+# sales list
+def getSales(browser, account):
+
+    # sales_info contains each real estate id account
+    sales_info = []
+
+    # append real estate id as first item in each account record
+    sales_info.append(account)
+    
+    # go to sales link
+    sales_link = browser.find_element_by_link_text('Sales')
+    sales_link.click()
+    soup_detail = bs4.BeautifulSoup(browser.page_source, "html.parser")
+
+    count_pages = browser.find_element_by_name("page")
+    #stores number of page results (1,2,3,4....)
+    number_of_pages = []
+
+    for option in count_pages.find_elements_by_tag_name("option"):
+        number_of_pages.append(option.text)
+
+    for page in number_of_pages():
+        select = Select(browser.find_element_by_name("page"))
+        select.select_by_visible_text(page)
+        go_button = browser.find_element_by_xpath("//input[@value='GO']")
+        go_button.send_keys(Keys.RETURN)
 
 # tax bill list
 def getTaxBillData(browser, account):
@@ -301,7 +332,7 @@ def getTaxBillData(browser, account):
     # if no tax bill information is available go back to account list page
     try:
         if browser.find_element_by_name('Form1'):
-            browser.execute_script("window.history.go(-4)")
+            browser.execute_script("window.history.go(-2)")
 
     # if tax bill information is available 'Form1' will not be found
     # then data collection for tax bill information
@@ -316,7 +347,7 @@ def getTaxBillData(browser, account):
                 taxbill_info.append(pair)
 
             #go back to previous page
-            browser.execute_script("window.history.go(-5)")
+            browser.execute_script("window.history.go(-3)")
 
         # if only one page of tax bill results
         except NoSuchElementException:
@@ -326,7 +357,7 @@ def getTaxBillData(browser, account):
                 taxbill_info.append(pair)
 
             #go back to previous page
-            browser.execute_script("window.history.go(-4)")
+            browser.execute_script("window.history.go(-2)")
 
         return taxbill_info
 
