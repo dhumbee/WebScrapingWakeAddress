@@ -74,6 +74,9 @@ def getResults(name_to_search):
     # land data table information
     land_info_list = []
 
+    # sales data table information
+    sales_info_list = []
+
     # taxbill data table information
     taxbill_info_list = []
 
@@ -115,11 +118,15 @@ def getResults(name_to_search):
                 # append each record's information to data table list above
                 land_info_list.append(land_info)
 
+                sales_info = getSales(browser, account)
+                # append each record's information to data table list above
+                sales_info_list.append(sales_info)
+
                 taxbill_info = getTaxBillData(browser, account)
                 # append each record's information to data table list above
                 taxbill_info_list.append(taxbill_info)
                                 
-                print(taxbill_info)
+                print(sales_info)
     browser.close()  
           
 
@@ -296,24 +303,58 @@ def getSales(browser, account):
 
     # append real estate id as first item in each account record
     sales_info.append(account)
-    
-    # go to sales link
-    sales_link = browser.find_element_by_link_text('Sales')
-    sales_link.click()
-    soup_detail = bs4.BeautifulSoup(browser.page_source, "html.parser")
 
-    count_pages = browser.find_element_by_name("page")
-    #stores number of page results (1,2,3,4....)
-    number_of_pages = []
+    try:
+        # go to sales link
+        sales_link = browser.find_element_by_link_text('Sales')
+        sales_link.click()
+        soup_detail = bs4.BeautifulSoup(browser.page_source, "html.parser")
 
-    for option in count_pages.find_elements_by_tag_name("option"):
-        number_of_pages.append(option.text)
+        # if multiple pages of sales results
+        try:
+            count_pages = browser.find_element_by_name("page")
+            # stores number of page results (1,2,3,4....)
+            number_of_pages = []
 
-    for page in number_of_pages():
-        select = Select(browser.find_element_by_name("page"))
-        select.select_by_visible_text(page)
-        go_button = browser.find_element_by_xpath("//input[@value='GO']")
-        go_button.send_keys(Keys.RETURN)
+            for option in count_pages.find_elements_by_tag_name("option"):
+                number_of_pages.append(option.text)
+
+            for page in number_of_pages:
+                select = Select(browser.find_element_by_name("page"))
+                select.select_by_visible_text(page)
+                go_button = browser.find_element_by_xpath("//input[@value='GO']")
+                go_button.send_keys(Keys.RETURN)
+                soup_detail = bs4.BeautifulSoup (browser.page_source, "html.parser")
+
+                # grab 5th table tag 
+                for el in soup_detail.findAll('table')[6].tbody.findAll('tr')[2:]:            
+                    prop_els = el.findAll('td')
+                    for prop_el in prop_els:
+                        sales_item = prop_el.get_text().strip()
+                        sales_info.append(sales_item)
+                    
+
+                browser.execute_script("window.history.go(-1)")
+
+
+        # if only single page of results
+        except NoSuchElementException:
+
+            # grab 5th table tag 
+                for el in soup_detail.findAll('table')[6].tbody.findAll('tr')[2:]:            
+                    prop_els = el.findAll('td')
+                    for prop_el in prop_els:
+                        sales_item = prop_el.get_text().strip()
+                        sales_info.append(sales_item)
+
+
+    except IndexError:
+        pass
+
+    # go back to account summary page
+    browser.execute_script("window.history.go(-1)")
+
+    return sales_info
 
 # tax bill list
 def getTaxBillData(browser, account):
