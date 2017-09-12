@@ -27,7 +27,6 @@ def main():
 def getResults(name_to_search):
     browser = webdriver.Chrome()
     browser.get("http://services.wakegov.com/realestate/")
-    print(browser.title)
 
     street_name_box = browser.find_element_by_name("stname")
     #name_to_search = input("Enter a street name to search for: ")
@@ -50,15 +49,6 @@ def getResults(name_to_search):
     except NoSuchElementException:
         pass
 
-    # if multiple pages of results try to loop through all pages
-    # and collect account number of each result
-    # run function call to getAccountDetails to pull information from detail page
-    count_pages = browser.find_element_by_name("spg")
-    number_of_pages = []
-
-    for option in count_pages.find_elements_by_tag_name("option"):
-        number_of_pages.append(option.text)
-
     # owner data table information
     owner_info_list = []
 
@@ -80,55 +70,127 @@ def getResults(name_to_search):
     # taxbill data table information
     taxbill_info_list = []
 
-    # loop thru pages to get each page of account results
-    for page in number_of_pages:
-        select = Select(browser.find_element_by_name("spg"))
-        select.select_by_visible_text(page)
-        go_button = browser.find_element_by_xpath("//input[@value='GO']")
-        go_button.send_keys(Keys.RETURN)
-        soup = bs4.BeautifulSoup (browser.page_source, "html.parser")    
+    try:
+        # if multiple pages of results try to loop through all pages
+        # and collect account number of each result
+        # run function call to pull information 
+        count_pages = browser.find_element_by_name("spg")
+        number_of_pages = []
 
-        # loop through result set and locate account numbers for each property
-        for row in soup.findAll('table')[4].tbody.findAll('tr'):            
+        for option in count_pages.find_elements_by_tag_name("option"):
+            number_of_pages.append(option.text)
+
+        # loop thru pages to get each page of account results
+        for page in number_of_pages:
+            select = Select(browser.find_element_by_name("spg"))
+            select.select_by_visible_text(page)
+            go_button = browser.find_element_by_xpath("//input[@value='GO']")
+            go_button.send_keys(Keys.RETURN)
+            soup = bs4.BeautifulSoup (browser.page_source, "html.parser")    
+
+            # loop through result set and locate account numbers for each property
+            for row in soup.findAll('table')[4].tbody.findAll('tr'):            
+                cols = row.findAll('td')
+                if len(cols) > 9:
+                    account = cols[1].get_text()
+                if account != "Account":
+                    account_link = browser.find_element_by_link_text(account) 
+                    account_link.click()
+                    soup_detail = bs4.BeautifulSoup(browser.page_source, "html.parser")
+                    
+                    owner_info = getOwnerInfo(account, soup_detail)
+                    # append each record's information to data table list above
+                    owner_info_list.append(owner_info)
+
+                    property_info = getPropertyData(account, soup_detail)
+                    # append each record's information to data table list above
+                    property_info_list.append(property_info)
+
+                    tax_info = getTaxData(account, soup_detail)
+                    # append each record's information to data table list above
+                    tax_info_list.append(tax_info)
+
+                    building_info = getBuildingData(browser, account, soup_detail)
+                    # append each record's information to data table list above
+                    building_info_list.append(building_info)
+
+                    land_info = getLandData(browser, account)
+                    # append each record's information to data table list above
+                    land_info_list.append(land_info)
+
+                    sales_info = getSales(browser, account)
+                    # append each record's information to data table list above
+                    sales_info_list.append(sales_info)
+
+                    taxbill_info = getTaxBillData(browser, account)
+                    # append each record's information to data table list above
+                    taxbill_info_list.append(taxbill_info)
+
+        
+    #if multiple pages not found-collect account number of each result
+    #run function call to pull information 
+    
+    except NoSuchElementException:
+        soup = bs4.BeautifulSoup (browser.page_source, "html.parser")
+        for row in soup.findAll('table')[4].tbody.findAll('tr'):
             cols = row.findAll('td')
             if len(cols) > 9:
                 account = cols[1].get_text()
-            if account != "Account":
-                account_link = browser.find_element_by_link_text(account) 
-                account_link.click()
-                soup_detail = bs4.BeautifulSoup(browser.page_source, "html.parser")
-                
-                owner_info = getOwnerInfo(account, soup_detail)
-                # append each record's information to data table list above
-                owner_info_list.append(owner_info)
+                if account != "Account":
+                    account_link = browser.find_element_by_link_text(account) 
+                    account_link.click()
+                    soup_detail = bs4.BeautifulSoup(browser.page_source, "html.parser")
+                    
+                    owner_info = getOwnerInfo(account, soup_detail)
+                    # append each record's information to data table list above
+                    owner_info_list.append(owner_info)
 
-                property_info = getPropertyData(account, soup_detail)
-                # append each record's information to data table list above
-                property_info_list.append(property_info)
+                    property_info = getPropertyData(account, soup_detail)
+                    # append each record's information to data table list above
+                    property_info_list.append(property_info)
 
-                tax_info = getTaxData(account, soup_detail)
-                # append each record's information to data table list above
-                tax_info_list.append(tax_info)
+                    tax_info = getTaxData(account, soup_detail)
+                    # append each record's information to data table list above
+                    tax_info_list.append(tax_info)
 
-                building_info = getBuildingData(browser, account, soup_detail)
-                # append each record's information to data table list above
-                building_info_list.append(building_info)
+                    building_info = getBuildingData(browser, account, soup_detail)
+                    # append each record's information to data table list above
+                    building_info_list.append(building_info)
 
-                land_info = getLandData(browser, account)
-                # append each record's information to data table list above
-                land_info_list.append(land_info)
+                    land_info = getLandData(browser, account)
+                    # append each record's information to data table list above
+                    land_info_list.append(land_info)
 
-                sales_info = getSales(browser, account)
-                # append each record's information to data table list above
-                sales_info_list.append(sales_info)
+                    sales_info = getSales(browser, account)
+                    # append each record's information to data table list above
+                    sales_info_list.append(sales_info)
 
-                taxbill_info = getTaxBillData(browser, account)
-                # append each record's information to data table list above
-                taxbill_info_list.append(taxbill_info)
-                                
-                print(sales_info)
+                    taxbill_info = getTaxBillData(browser, account)
+                    # append each record's information to data table list above
+                    taxbill_info_list.append(taxbill_info)
+
     browser.close()  
-          
+    
+    '''# owner data table information
+    save_owner_to_db(owner_info_list)
+
+    # property data table information
+    property_info_list = []
+
+    # tax info data table information
+    tax_info_list =[]
+
+    # building data table information
+    building_info_list = []
+
+    # land data table information
+    land_info_list = []
+
+    # sales data table information
+    sales_info_list = []
+
+    # taxbill data table information
+    taxbill_info_list = []'''
 
 # owner list
 def getOwnerInfo(account, soup_detail):    
@@ -417,44 +479,3 @@ def pair_items(list_of_tags):
 
 main()
 
-'''#append account record data/line items to inner list
-    inner_trans_improv_data.append(trans_improv_items)  
-#append individual account records to outer list
-#to create lists of lists of lists
-outer_trans_improv_data.append(inner_trans_improv_data)
-
-#assessed value data table information
-#inner list holds all data information per account record
-inner_assessed_data = []
-inner_assessed_data.append(account)
-#loop thru 5th table tag to grab all td tags
-for el in soup_detail.findAll('table')[11].tbody.findAll('tr'):
-    # holds each pair of line items, field and value
-    assessed_items = []                    
-    prop_el4 = el.findAll('td')
-    try:                    
-        assessed_text1 = prop_el4[0].get_text().strip()
-        assessed_text2 = prop_el4[1].get_text().strip()
-        assessed_items.append(assessed_text1)
-        assessed_items.append(assessed_text2)
-    except IndexError:
-        assessed_text1 = prop_el4[0].get_text().strip()
-        assessed_items.append(assessed_text1)
-    #append account record data/line items to inner list
-    inner_assessed_data.append(assessed_items)
-#append individual account records to outer list
-#to create lists of lists of lists
-outer_assessed_data.append(inner_assessed_data)
-          
-    print(outer_assessed_data)            
-        
-    if multiple pages not found-collect account number of each result
-    run function call to getAccountDetails to pull information from detail page
-    
-    except NoSuchElementException:
-        soup = bs4.BeautifulSoup (browser.page_source, "html.parser")
-        for row in soup.findAll('table')[4].tbody.findAll('tr'):
-            cols = row.findAll('td')
-            if len(cols) > 9:
-                account = cols[1].get_text()
-                print(account)'''
