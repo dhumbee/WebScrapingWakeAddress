@@ -170,7 +170,15 @@ def getResults(name_to_search):
                     taxbill_info_list.append(taxbill_info)
 
     browser.close()  
-    
+
+    print(owner_info_list)
+    print(property_info_list)
+    print(tax_info_list)
+    print(building_info_list)
+    print(land_info_list)
+    print(sales_info_list)
+    print(taxbill_info_list)
+
     '''# owner data table information
     save_owner_to_db(owner_info_list)
 
@@ -234,7 +242,7 @@ def getPropertyData(account, soup_detail):
     del property_info[1:11]   
 
     #loop thru 10th table tag to grab all td tags
-    for el in soup_detail.findAll('table')[9].tbody.findAll('tr'):
+    for el in soup_detail.findAll('table')[9].tbody.findAll('tr')[1:]:
         # holds each pair of line items, field and value
         property_items = []
         prop_el = el.findAll('td')
@@ -257,7 +265,7 @@ def getPropertyData(account, soup_detail):
         property_info.append(property_items)
 
     #loop thru 11th table tag to grab first 8 tr tags and all td tags inside
-    for el in soup_detail.findAll('table')[10].tbody.findAll('tr')[0:9]:                  
+    for el in soup_detail.findAll('table')[10].tbody.findAll('tr')[2:9]:                  
         prop_el = el.findAll('td')
         pair = pair_items(prop_el)
         #append account record data/line items to property_info
@@ -274,9 +282,11 @@ def getTaxData(account, soup_detail):
     # append real estate id as first item in each account record
     tax_info.append(account)
 
-    for el in soup_detail.findAll('table')[11].tbody.findAll('tr'):                  
+    for el in soup_detail.findAll('table')[11].tbody.findAll('tr')[1:]:                  
         prop_el = el.findAll('td')
         pair = pair_items(prop_el)
+        if pair[0] == '':
+            continue
         #append account record data/line items to property_info
         tax_info.append(pair)
 
@@ -472,9 +482,11 @@ def pair_items(list_of_tags):
         value = list_of_tags[1].get_text().strip()
         items.append(field)
         items.append(value)
+        #return value
     except IndexError:
-        item = list_of_tags[0].get_text().strip()
-        items.append(item)
+        value = list_of_tags[0].get_text().strip()
+        items.append(value)
+        #return value
     return items
 
 main()

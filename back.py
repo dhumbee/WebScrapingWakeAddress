@@ -1,10 +1,10 @@
 import psycopg2
-
+from config import config
  
  
 def create_tables():
     #create tables in the PostgreSQL database
-	commands = (
+    commands = (
     	"""
 		CREATE TABLE owner(
 			real_estate_id text PRIMARY KEY,
@@ -20,7 +20,6 @@ def create_tables():
     		real_estate_id text PRIMARY KEY, 
     		location_address text,
     		location_address_2 text,
-    		location_address_3 text
     		old_map text,
     		map_scale text,
     		vcs text,
@@ -40,14 +39,14 @@ def create_tables():
     		pkg_sale_date date,
     		pkg_sale_price numeric,
     		land_sale_date date,
-    		land_sale_price numeric
+    		and_sale_price numeric
     	)
 		""",
 		"""
 		CREATE TABLE tax_info(
 			real_estate_id text PRIMARY KEY,
 			land_value numeric, 
-			building_value numeric,
+			building_valuenumeric,
 			tax_relief numeric,
 			land_use_value numeric,
 			use_value_deferment numeric,
@@ -128,23 +127,26 @@ def create_tables():
 		)
 		"""
 	)
-
+	print("hello")
 	conn = None
-	try:
-	# connect to the PostgreSQL server
-		conn = psycopg2.connect("dbname=Wake_County_Real_Estate user=postgres password=postgres")
-
-		cur = conn.cursor()
-		for command in commands:
-			cur.execute(command)
-			
-		cur.close()
-		conn.commit()
-	except (Exception, psycopg2.DatabaseError) as error:
-		print(error)
-	finally:
-		if conn is not None:
-			conn.close()
+    try:
+    	# connect to the PostgreSQL server
+    	conn = psycopg2.connect("dbname=Wake_County_Real_Estate user=postgres")
+        cur = conn.cursor()
+        # create table one by one
+        for command in commands:
+            #cur.execute(command)
+            print(command)
+        # close communication with the PostgreSQL database server
+        cur.close()
+        # commit the changes
+        conn.commit()
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(error)
+    finally:
+        if conn is not None:
+            conn.close()
  
  
-create_tables()
+if __name__ == '__main__':
+    create_tables()
