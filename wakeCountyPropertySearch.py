@@ -11,6 +11,8 @@
 '''
 
 import bs4
+import csv
+from datetime import datetime
 from selenium import webdriver
 from selenium.webdriver.support.ui import Select
 from selenium.webdriver.common.keys import Keys
@@ -171,13 +173,34 @@ def getResults(name_to_search):
 
     browser.close()  
 
-    print(owner_info_list)
-    print(property_info_list)
-    print(tax_info_list)
-    print(building_info_list)
-    print(land_info_list)
-    print(sales_info_list)
-    print(taxbill_info_list)
+    ofile  = open('property.csv', "w")
+    #writer = csv.writer(ofile, delimiter=',', lineterminator = '\n', quotechar="'", quoting=csv.QUOTE_NONNUMERIC)
+    writer = csv.writer(ofile, delimiter=',', lineterminator = '\n')
+    for row in property_info_list:
+        
+
+        writer.writerow(row)
+
+    ofile.close()
+
+def convert_date(date_to_convert):
+
+    converted = date_to_convert
+    
+    try:
+        converted = datetime.strptime(date_to_convert,'%m/%d/%Y')
+        converted = converted.strftime('%Y-%m-%d') 
+    except ValueError:
+        pass  #assume already in correct format
+    return converted   
+
+    #print(owner_info_list)
+    #print(property_info_list)
+    #print(tax_info_list)
+    #print(building_info_list)
+    #print(land_info_list)
+    #---print(sales_info_list)----start here!!!!
+    #print(taxbill_info_list)
 
     '''# owner data table information
     save_owner_to_db(owner_info_list)
@@ -243,33 +266,43 @@ def getPropertyData(account, soup_detail):
 
     #loop thru 10th table tag to grab all td tags
     for el in soup_detail.findAll('table')[9].tbody.findAll('tr')[1:]:
-        # holds each pair of line items, field and value
-        property_items = []
+        # finds values for db row and grabs value for each field
         prop_el = el.findAll('td')
         try:
-            prop_text1 = prop_el[0].get_text().strip()
-            prop_text2 = prop_el[1].get_text().strip()
+            field = prop_el[0].get_text().strip()
+            value = prop_el[1].get_text().strip()
             # skip Land Class and Acreage- they go in other groups
-            if prop_text1 == 'Land Class' or prop_text1 == 'Acreage':
+            if field == 'Land Class' or field == 'Acreage':
                 continue
-            property_items.append(prop_text1)
-            property_items.append(prop_text2)
+            property_info.append(value)
+
         except IndexError:
-            prop_text1 = prop_el2[0].get_text().strip()
+            text1 = prop_el[0].get_text().strip()
             # skip Land Class and Acreage- they go in other groups
-            if prop_text1 == 'Land Class' or prop_text1 == 'Acreage':
+            if text1 == 'Land Class' or text1 == 'Acreage':
                 continue
-            property_items.append(prop_text1)
+            property_info.append(text1)
 
-        #append account record data/line items to property_info
-        property_info.append(property_items)
-
+        
     #loop thru 11th table tag to grab first 8 tr tags and all td tags inside
-    for el in soup_detail.findAll('table')[10].tbody.findAll('tr')[2:9]:                  
+    for el in soup_detail.findAll('table')[10].tbody.findAll('tr')[2:9]:   
+        # finds values for db row and grabs value for each field               
         prop_el = el.findAll('td')
-        pair = pair_items(prop_el)
-        #append account record data/line items to property_info
-        property_info.append(pair)
+        value = pair_items(prop_el)
+        property_info.append(value)
+
+    property_info[21] = int(row[21].replace("$", "").replace(",", ""))
+    row[15] = convert_date(row[15])
+    row[17] = convert_date(row[17])
+    row[20] = convert_date(row[20])
+
+    for i in range(len(row)):
+        if i == 21:
+            continue
+        if row[i] != "":
+            row[i] = "'"+str(row[i])+"'"
+        else:
+            row[i] = None
     
     return property_info 
                 
@@ -282,13 +315,15 @@ def getTaxData(account, soup_detail):
     # append real estate id as first item in each account record
     tax_info.append(account)
 
+    # get values for db row
     for el in soup_detail.findAll('table')[11].tbody.findAll('tr')[1:]:                  
         prop_el = el.findAll('td')
-        pair = pair_items(prop_el)
-        if pair[0] == '':
+        value = pair_items(prop_el)
+        if value is None:
             continue
+
         #append account record data/line items to property_info
-        tax_info.append(pair)
+        tax_info.append(value)
 
     return tax_info
 
@@ -306,8 +341,8 @@ def getBuildingData(browser, account, soup_detail):
         #loop thru 11th table tag to grab last 4 tr tags and all td tags inside
         for el in soup_detail.findAll('table')[10].tbody.findAll('tr')[13:15]:            
             prop_el = el.findAll('td')
-            pair = pair_items(prop_el)
-            building_info.append(pair) 
+            value = pair_items(prop_el)
+            building_info.append(value) 
 
         building_link = browser.find_element_by_link_text('Buildings')
         building_link.click()
@@ -316,20 +351,22 @@ def getBuildingData(browser, account, soup_detail):
         #loop thru 10th table tag to grab td tags
         for el in soup_detail.findAll('table')[9].tbody.findAll('tr'):
             prop_el = el.findAll('td')
-            pair = pair_items(prop_el)
-            building_info.append(pair)
+            value = pair_items(prop_el)
+            building_info.append(value)
 
         #loop thru 13th table tag to grab td tags
         for el in soup_detail.findAll('table')[12].tbody.findAll('tr')[0:9]:
             prop_el = el.findAll('td')
-            pair = pair_items(prop_el)
-            building_info.append(pair)
+            value = pair_items(prop_el)
+            building_info.append(value)
 
         #loop thru 11th table tag to grab td tags
         for el in soup_detail.findAll('table')[10].tbody.findAll('tr'):
             prop_el = el.findAll('td')
-            pair = pair_items(prop_el)
-            building_info.append(pair)
+            value = pair_items(prop_el)
+            building_info.append(value)
+
+        del building_info[23]
 
     except IndexError:
         pass
@@ -362,6 +399,7 @@ def getLandData(browser, account):
     except IndexError:
         pass
 
+    del land_info[1]
     # go back to account summary page
     browser.execute_script("window.history.go(-1)")
 
@@ -476,18 +514,17 @@ def getTaxBillData(browser, account):
 
 
 def pair_items(list_of_tags):
-    items = []
     try:                    
         field = list_of_tags[0].get_text().strip()
+        if field == '':
+            return None
         value = list_of_tags[1].get_text().strip()
-        items.append(field)
-        items.append(value)
-        #return value
+        return value
+
     except IndexError:
-        value = list_of_tags[0].get_text().strip()
-        items.append(value)
-        #return value
-    return items
+        value = list_of_tags[0].get_text().strip()        
+        return value
+    
 
 main()
 
